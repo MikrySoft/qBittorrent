@@ -56,6 +56,7 @@
 #include "base/utils/misc.h"
 #include "base/utils/string.h"
 #include "autoexpandabledialog.h"
+#include "categorytree.h"
 #include "deletionconfirmationdialog.h"
 #include "mainwindow.h"
 #include "optionsdialog.h"
@@ -756,6 +757,13 @@ void TransferListWidget::askNewCategoryForSelection()
         setSelectionCategory(newCategoryName);
 }
 
+void TransferListWidget::askNewCategoryForSelection(QString parent)
+{
+    const QString newCategoryName = TorrentCategoryDialog::createCategory(this, parent);
+    if (!newCategoryName.isEmpty())
+        setSelectionCategory(newCategoryName);
+}
+
 void TransferListWidget::askAddTagsForSelection()
 {
     const QStringList tags = askTagsForSelection(tr("Add Tags"));
@@ -1154,23 +1162,49 @@ void TransferListWidget::displayListMenu()
     QMenu *categoryMenu = listMenu->addMenu(UIThemeManager::instance()->getIcon(u"view-categories"_s), tr("Categor&y"));
 
     categoryMenu->addAction(UIThemeManager::instance()->getIcon(u"list-add"_s), tr("&New...", "New category...")
-        , this, &TransferListWidget::askNewCategoryForSelection);
+        , this, [this]() { askNewCategoryForSelection(); });
     categoryMenu->addAction(UIThemeManager::instance()->getIcon(u"edit-clear"_s), tr("&Reset", "Reset category")
         , this, [this]() { setSelectionCategory(u""_s); });
     categoryMenu->addSeparator();
 
-    for (const QString &category : asConst(categories))
+    TreeNode tree(u""_s, nullptr, categoryMenu);
+
+    for (const QString& category : asConst(categories))
     {
-        const QString escapedCategory = QString(category).replace(u'&', u"&&"_s);  // avoid '&' becomes accelerator key
-        QAction *categoryAction = categoryMenu->addAction(UIThemeManager::instance()->getIcon(u"view-categories"_s), escapedCategory
+        tree.addNodeByPath(category);
+    }
+
+    tree.traverseDFS([this, firstCategory, allSameCategory](TreeNode* node) {
+        if (node->getParent() == nullptr)
+            return;
+        QString category = node->getFullPath().mid(1);
+        const QString escapedCategory = category.replace(u'&', u"&&"_s);
+        const QString escapedName = node->getName().replace(u'&', u"&&"_s);
+        QMenu* currentMenu = node->getParent()->getMenu();
+        bool hasSubmenu = false;
+        if (node->hasChildren())
+        {
+            QMenu* subcategoryMenu = currentMenu->addMenu(UIThemeManager::instance()->getIcon(u"view-categories"_s), escapedName);
+            currentMenu = subcategoryMenu;
+            hasSubmenu = true;
+            node->setMenu(subcategoryMenu);
+            currentMenu->addAction(UIThemeManager::instance()->getIcon(u"list-add"_s), tr("&New...", "New subcategory...")
+                , this, [this, category]() { askNewCategoryForSelection(category); });
+            currentMenu->addSeparator();
+        }
+        QAction* categoryAction = currentMenu->addAction(UIThemeManager::instance()->getIcon(u"view-categories"_s), escapedName
             , this, [this, category]() { setSelectionCategory(category); });
 
+        node->setAction(categoryAction);
         if (allSameCategory && (category == firstCategory))
         {
             categoryAction->setCheckable(true);
             categoryAction->setChecked(true);
         }
-    }
+        if (hasSubmenu)
+            currentMenu->addSeparator();
+
+        });
 
     // Tag Menu
     QStringList tags(BitTorrent::Session::instance()->tags().values());

@@ -232,7 +232,7 @@ add_library(qbt_gui STATIC
 
     # generated .ui headers
     ${UI_HEADERS}
-)
+ "categorytree.h" "categorytree.cpp")
 
 target_sources(qbt_gui INTERFACE about.qrc)
 
