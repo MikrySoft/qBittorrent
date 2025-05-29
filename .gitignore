@@ -44,3 +44,6 @@ build/
 .vs/
 custom-ports/
 vcpkg_installed/
+vcpkg*
+/vcpkg-configuration.json.ignore
+/vcpkg.json.ignore
