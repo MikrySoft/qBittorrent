@@ -41,9 +41,6 @@ src/icons/skin/build-icons/icons/*.png
 
 # CMake build directory
 build/
-.vs/
-custom-ports/
-vcpkg_installed/
-vcpkg*
-/vcpkg-configuration.json.ignore
-/vcpkg.json.ignore
+/.vs
+/vcpkg_installed
+/custom-ports
