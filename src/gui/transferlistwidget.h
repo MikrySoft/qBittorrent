@@ -116,6 +116,7 @@ private slots:
     void setSelectedFirstLastPiecePrio(bool enabled) const;
     void setSelectedAutoTMMEnabled(bool enabled);
     void askNewCategoryForSelection();
+    void askNewCategoryForSelection(const QString &parent);
     void saveSettings();
 
 private:
