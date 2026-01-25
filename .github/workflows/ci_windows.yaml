@@ -50,7 +50,13 @@ jobs:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', (process.env.ACTIONS_CACHE_URL || ''));
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', (process.env.ACTIONS_RUNTIME_TOKEN || ''));
-
+            
+      - name: Switch back to vcpkg legacy mode
+        run: |
+          $files = "vcpkg.json", "vcpkg-configuration.json"
+          Remove-Item -Path $files -Force -ErrorAction SilentlyContinue
+          Write-Host "Cleanup complete: vcpkg configuration files removed."
+      
       - name: Install dependencies with vcpkg
         run: |
           # create our own triplet
