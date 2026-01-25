@@ -1,0 +1,12 @@
+{
+    "configurePresets": [
+        {
+            "name": "default",
+            "inherits": "vcpkg",
+            "environment": {
+                "VCPKG_ROOT": "C:/Users/MikrySoft/source/repos/vcpkg"
+            }
+        }
+    ],
+    "version": 2
+}
