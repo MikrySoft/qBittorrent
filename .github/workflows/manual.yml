@@ -1,0 +1,53 @@
+name: Run All Workflows
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run workflows on'
+        required: true
+        default: 'master' # Change this if your default branch is main
+
+jobs:
+  trigger-all:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # Required to trigger other workflows
+      contents: read  # Required to list workflows
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger all other active workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The name of THIS workflow, to prevent it from triggering itself recursively
+          CURRENT_WORKFLOW_NAME: "Run All Workflows" 
+          TARGET_REF: ${{ inputs.branch }}
+        run: |
+          echo "Fetching list of workflows..."
+          
+          # 1. List all workflows
+          # 2. Filter for 'active' state
+          # 3. Filter OUT the current workflow by name
+          # 4. Extract the ID
+          
+          WORKFLOW_IDS=$(gh workflow list --all --json name,state,id --jq \
+            ".[] | select(.state==\"active\") | select(.name != \"$CURRENT_WORKFLOW_NAME\") | .id")
+
+          if [ -z "$WORKFLOW_IDS" ]; then
+            echo "No other active workflows found."
+            exit 0
+          fi
+
+          echo "Found workflows. Triggering them on ref: $TARGET_REF"
+
+          for id in $WORKFLOW_IDS; do
+            echo "---------------------------------------------------"
+            echo "Attempting to trigger workflow ID: $id"
+            
+            # We use '|| true' to ensure the loop continues even if one trigger fails
+            # (e.g., if a workflow requires inputs that we didn't provide)
+            gh workflow run "$id" --ref "$TARGET_REF" && echo "✅ Successfully triggered $id" || echo "❌ Failed to trigger $id (Check if it has 'workflow_dispatch' event or requires inputs)"
+          done
