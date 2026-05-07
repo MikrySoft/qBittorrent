@@ -5,7 +5,8 @@ project(qBittorrent
     HOMEPAGE_URL "https://www.qbittorrent.org/"
     LANGUAGES CXX
 )
-
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /FORCE:MULTIPLE")
 # version requirements - older versions may work, but you are on your own
 set(minBoostVersion 1.76)
 set(minQt6Version 6.6.0)
